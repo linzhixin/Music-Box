@@ -8,11 +8,11 @@
     height: auto;
     margin: 50px auto;
     clear: both;
-    display: inline-block;">
-  <span style="float:left;width:10%">0:00</span>
-    <div class="ProgressBar"></div>
+    display: inline-block;" class="box">
+  <span style="float:left;width:10%;" class="beginTime">{{this.showTime}}</span>
+    <div class="ProgressBar" @mousedown="turn"></div>
     <div class="ProgressBarMove"></div>
-    <div class="ball"></div>
+    <div class="ball" @mousedown="go" @mouseout="stopmoving" @mousemove="mousemoving"></div>
   <span style="float:right;width:10%">{{totalTime}}</span>
   </div>
   <div>
@@ -43,6 +43,10 @@ export default {
       barMoving:0,
       time:0,
       Barwidth:'',
+      a:'',
+      Barmoving:'',
+      showTime:'',
+      begin:false,
     }
   },
   computed: mapState([
@@ -71,12 +75,16 @@ export default {
       this.pause=false
         var audio =document.querySelector('#audio');
             audio.pause();
+        window.clearInterval(this.addTime);
     },
     startplay(){
       this.play=true
       this.stop=false
         var audio =document.querySelector('#audio');
+
             audio.play();
+        this.addTime();
+
     },
     getSong(){
       console.log(this.singerDETAILS[this.singerDetailIndex])
@@ -84,8 +92,8 @@ export default {
                     this.change(data)
     },
     move(){
-      if(this.Barwidth*this.time>this.ProgressBar){
-         window.clearInterval()
+      if(this.Barwidth*this.time>this.ProgressBar||this.play==false){
+         window.clearInterval(this.a)
       }
        this.Barwidth=parseInt(this.ProgressBar)/parseInt(this.singerDETAILS[this.singerDetailIndex].musicData.interval);
        let n = parseInt(this.singerDETAILS[this.singerDetailIndex].musicData.interval)/parseInt(this.ProgressBar);
@@ -94,14 +102,32 @@ export default {
          document.querySelector('.ProgressBarMove').style.width =  this.Barwidth*this.time+"px";
 
       this.time = this.time+1;
+      let theTime=this.time;
+      let theTime1=0;
+      let theTime2=0;
+    if(this.time > 60) {  
+        theTime1 = parseInt(this.time/60);  
+        theTime = parseInt(this.time%60);  
+            if(theTime1 > 60) {  
+            theTime2 = parseInt(theTime1/60);  
+            theTime1 = parseInt(theTime1%60);  
+            }  
+    }  
+    if (theTime<10){
+      theTime=0+theTime
+    }
+        let result =""+parseInt(theTime1)+":"+""+parseInt(theTime)+"";  
+
+      this.showTime=result;
     },
-    addTime(){setInterval(this.move,1000)},
+    addTime(){this.a = window.setInterval(this.move,1000)},
     change(data){
       
       let theTime;
       let theTime1=0;
       let theTime2=0;
       this.totalTime=data.interval;
+
     if(data.interval > 60) {  
         theTime1 = parseInt(data.interval/60);  
         theTime = parseInt(data.interval%60);  
@@ -135,9 +161,42 @@ export default {
       this.index=this.index-1;
       let data = this.singerDETAILS[this.index].musicData
                    this.change(data) 
+    },
+
+    turn(e){
+         console.log(this.time);
+         console.log(e);
+         console.log(document.querySelector('.box').offsetLeft);
+         console.log(document.body.clientWidth)
+         console.log(0.1*document.body.clientWidth)
+         this.Barmoving = e.clientX-document.querySelector('.box').offsetLeft-0.1*document.body.clientWidth;
+         this.time = this.Barmoving/this.Barwidth;
+         console.log(this.Barmoving);
+         console.log(this.Barmoving)
+         console.log(this.time);
+         console.log(document.querySelector('.ball').style.marginLeft)
+         document.querySelector('#audio').currentTime=this.time;
+
+    },
+    go(e){
+      console.log(e);
+      this.begin=true;
+    },
+    mousemoving(e){
+      console.log(e);
+      if(this.begin==true){
+      this.Barmoving = e.clientX-document.querySelector('.box').offsetLeft-0.1*document.body.clientWidth;
+      this.time = this.Barmoving/this.Barwidth;
+      document.querySelector('.ball').style.marginLeft =  this.Barwidth*this.time+"px";
+         document.querySelector('.ProgressBarMove').style.width =  this.Barwidth*this.time+"px";
+      }
+    },
+    stopmoving(e){
+      console.log(this.time);
+      console.log("aaaaa");
+      document.querySelector("#audio").currentTime = this.time;
+      this.begin=false
     }
-
-
   }
 } 
 </script>
@@ -167,12 +226,13 @@ export default {
     float: left;
   }
   .ball{
-    width: 6px;
-    height: 6px;
-    border-radius: 3px;
+    width:15px;
+    height:15px;
+    border-radius:7.5px;
     background-color: blue;
     position: absolute;
     left: 10%;
+    top: -5px;
   }
   .ProgressBarMove{
     height: 3px;
